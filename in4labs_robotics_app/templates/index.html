@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <section>
+        <div class="main-container">
+            <div class="row">      
+                <div class="editor" id="editor">
+                    <div class="editor-nav">
+                        <div class="row">
+                            <nav>
+                                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                                    {% for navtab in navtabs %}
+                                        {{ navtab | safe }}
+                                    {% endfor %}
+                                </div>
+                            </nav>
+                        </div>
+                        <div class="tab-content" id="nav-tabContent">
+                            {% for editor in editors %}
+                                {{ editor | safe }}
+                            {% endfor %}   
+                        </div>
+                    </div>
+                </div>
+                <div class="camera" id="camera">
+                    <iframe id="cam"
+                            src="{{ cam_url }}"
+                            allowfullscreen="allowfullscreen"
+                            mozallowfullscreen="mozallowfullscreen"
+                            webkitallowfullscreen="webkitallowfullscreen"
+                            width="560">
+                    </iframe>
+                </div>
+            </div>
+            <br>
+            <div class="row justify-content-center">
+                <div class="col-10">
+                    <div class="card" style="background: #00979C; color: white;">
+                        <div class="card-body">
+                          <h3><u>Circuit diagram</u></h3>
+                        </div>
+                        <img src="{{ url_for('static', filename='img/circuit_diagram_robotics.jpg') }}" class="img img-fluid m-2" alt="Circuit diagram">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="timer">
+            <p class="text-right">Remaining time</p>
+            <h5 id="timer-count" class="timer-count font-bold text-right"></h5>
+        </div>
+        {% for board in boards %}
+            {% if loop.index0 == 0 %}
+            <script>
+                document.getElementById("nav-{{ board }}-tab").classList.add("active");
+            </script>
+            {% else%}
+            <script>
+                document.getElementById("nav-{{ board }}").classList.remove("active","show");
+            </script>
+            {% endif %}
+        {% endfor %}
+        <script>
+            let end_time = new Date("{{ end_time }}").getTime();
+            countdownTimer(end_time); 
+        </script>
+    </section>
+{% endblock %} 
+

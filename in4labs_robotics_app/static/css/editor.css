@@ -1,0 +1,238 @@
+.main-container {
+    min-width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+.main-container:before {
+    display: table;
+    content: " ";
+}
+.main-container:after {
+    display: table;
+    content: " ";
+    clear: both;
+}
+.editor-nav {
+    width: 100%;
+    background: #00979C;
+    padding: 6px;
+    border-radius: 4px;
+}
+.camera {
+    width: 560px;
+    float: left;
+}
+.editor {
+    width: calc(100% - 580px);
+    float: left;
+}
+
+.CodeMirror {
+    border: 2px solid #f2f2f2;
+    height: calc(100vh - 250px) !important;
+    border-top: 0;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    font-size: 12px;
+    line-height: 16px;
+    min-height: 437px;
+}
+
+.editor-nav button,
+.editor-nav select {
+    background-color: rgba(255, 255, 255, .5);
+    display: inline-block;
+    border: none;
+    border-radius: 3px;
+    padding: 6px;
+}
+
+/*  Navigation tabs  */
+.nav{
+    justify-content: center;
+}
+.nav-tabs .nav-link{
+    color: white;
+    font-weight: 700;
+    min-width: 150px;
+  }
+  .nav-tabs .nav-link.active {
+    background-color: rgba(255, 255, 255, .5);
+    color: white;
+  }
+
+/*  Examples dropdown  */
+.editor-examples select {
+    color: white;
+    padding: 7px 32px 7px 14px;
+    font-weight: 700;
+    min-width: 150px;
+}
+.editor-examples option {
+    font-weight: bold;
+    color: #00979c;
+}
+
+.editor-select {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.editor-examples-dropdown:after {
+    content: "\f078";
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-family: 'FontAwesome';
+    font-size: 14px;
+    color: white;
+    pointer-events: none;
+}
+
+.editor-examples button:focus, 
+.editor-examples button:hover, 
+.editor-examples button.active.focus, 
+.editor-examples button.active:focus, 
+.editor-examples button.active:hover, 
+.editor-examples button:active.focus, 
+.editor-examples button:active:focus, 
+.editor-examples button:active:hover, 
+.editor-examples .open>.dropdown-toggle.btn-default.focus, 
+.editor-examples .open>.dropdown-toggle.btn-default:focus, 
+.editor-examples .open>.dropdown-toggle.btn-default:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, .65);
+    border: 0;
+}
+
+.editor-examples button a {
+    color: white;
+    font-size: 16px;
+}
+
+
+/*  Compilers CTAs  */
+.editor-cta {
+    text-align: right;
+}
+
+.editor-cta > div {
+    display: inline-block;
+    text-align: right;
+}
+
+.editor-cta button {
+    height: 35px;
+    width: 40px;
+    margin-left: 5px;
+    color: white;
+    font-size: 20px;
+    line-height: 16px;
+}
+.editor-cta .fa-arrow-right {
+    font-size: 17px;
+}
+
+.editor-cta-load {
+    margin-right: 15px;
+}
+
+.tooltip-inner {
+    min-width: auto;
+    max-width: 300px;
+    width: auto;
+}
+
+/* Iframe + camera */
+.camera iframe {
+    height: 100%;
+    min-height: 485px;
+}
+
+/* Timer */
+.timer {
+    position: fixed;
+    bottom: 5px;
+    right: 20px;
+    height: 148px;
+    border: 8px solid #478e87;
+    border-radius: 50%;
+    padding: 25px;
+    background-color: #ffffff87;
+}
+
+.timer.red {
+    border-color: #e4233e;
+}
+
+.timer p {
+    font-size: 12px;
+    font-weight: bold;
+    color: #565656;
+    letter-spacing: 1px;
+}
+
+.timer h5 {
+    font-size: 32px;
+}
+
+pre {
+    background-color: #252525;
+    color: #fff;
+}
+
+#loader-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(200,200,200,.6);
+    z-index: 999;
+}
+
+.loader {
+    width: 100px;
+    height: 100px;
+    border-radius: 100%;
+    position: relative;
+    margin: auto;
+    margin-top: calc(50vh - 50px);
+}
+#loader:before, #loader:after{
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 100%;
+  height: 100%;
+  border-radius: 100%;
+  border: 10px solid transparent;
+  border-top-color: #00979C;
+}
+
+#loader:before{
+  z-index: 100;
+  animation: spin 1s infinite;
+}
+
+#loader:after{
+  border: 10px solid #fff;
+}
+
+@keyframes spin{
+  0%{
+    -webkit-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100%{
+    -webkit-transform: rotate(360deg);
+    -ms-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}

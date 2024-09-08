@@ -1,0 +1,54 @@
+@media (max-width: 1024px) {
+    #main-header {
+        height: 75px;
+        padding: 12px 15px;
+    }
+
+    main {
+        margin-top: 25px;
+    }
+
+    .page-title {
+        width: calc(100vw - 210px);
+    }
+    .lang-header {
+        padding-top: 0;
+    }
+
+    .main-instructions.buttons {
+        text-align: center;
+    }
+
+    .main-instructions h5 {
+        font-weight: 600;
+    }
+
+    .editor, camera {
+        width: 100%;
+    }
+    .CodeMirror {
+        height: 350px !important;
+        min-height: auto;
+        overflow: auto;
+    }
+}
+
+
+/* Helper classes */
+.is-hidden-xs, .is-hidden-sm {
+    display: none;
+}
+@media (min-width: 600px) {
+    .is-hidden-xs {
+        display: block;
+    }
+}
+
+.is-shown-xs, .is-shown-sm {
+    display: none;
+}
+@media (max-width: 600px) {
+    .is-shown-xs {
+        display: block;
+    }
+}
