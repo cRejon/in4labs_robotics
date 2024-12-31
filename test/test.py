@@ -3,7 +3,7 @@ import re
 import subprocess
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import atexit
 
 import bcrypt
@@ -106,11 +106,11 @@ hostname = subprocess.check_output(['hostname', '-I']).decode("utf-8").split()[0
 nodered_nat_port = lab['extra_containers'][0]['nat_port']
 
 # Docker environment variables
-end_time = datetime.now() + timedelta(minutes=lab_duration)
+end_time = datetime.now(timezone.utc) + timedelta(minutes=lab_duration)
 docker_env = {
     'USER_EMAIL': 'admin@email.com',
     'USER_ID': 1,
-    'END_TIME': end_time.strftime('%Y-%m-%dT%H:%M:%S'),
+    'END_TIME': end_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
     'CAM_URL': lab.get('cam_url', ''),
     'NODE_RED_URL': f'http://{hostname}:{nodered_nat_port}',
 }
