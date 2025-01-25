@@ -7,6 +7,7 @@ WORKDIR /usr/local
 RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | ARDUINO_UPDATER_ENABLE_NOTIFICATION=false sh -s 0.34.2
 RUN arduino-cli core update-index
 RUN arduino-cli core install arduino:avr
+RUN arduino-cli lib install "Braccio" 
 RUN arduino-cli lib install "BraccioV2" 
 
 # Python dependencies are installed here to ensure they will be cached.
