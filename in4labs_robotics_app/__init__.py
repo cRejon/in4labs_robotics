@@ -1,40 +1,38 @@
 import os
 import subprocess
 import time
+from datetime import datetime, timedelta, timezone
 
 import pexpect
 import requests
 from flask import Flask, render_template, url_for, jsonify, redirect, send_file, flash, request
 from flask_login import LoginManager, UserMixin, login_required, current_user, login_user
 
-from .utils import get_serial_number, get_usb_driver, create_editor, create_navtab
-
-
-# Flask environment variable needed for session management
-flask_config = {
-    # Use as secret key the user email + the end time of the session 
-    'SECRET_KEY': os.environ.get('USER_EMAIL') + os.environ.get('END_TIME'),
-}
+from .config import boards_config
+from .utils import cleanLab, upload_sketch, update_boards_config, create_editor, create_navtab
 
 # Docker environment variables
 cam_url = os.environ.get('CAM_URL') 
 user_email = os.environ.get('USER_EMAIL') 
 end_time = os.environ.get('END_TIME') 
 
-# Boards configuration
-boards = {
-    'Board_1':{
-        'name':'UNO R3',
-        'model':'Arduino UNO Rev3',
-        'fqbn':'arduino:avr:uno',
-        'usb_port':'1',
-    }
-}
+# The user end time will be 10 seconds before the actual end time
+# to have some margin to clean the lab
+user_end_time = datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc) - timedelta(seconds=10)
 
-boards = get_serial_number(boards) # Get the serial number and driver of the boards
+boards = update_boards_config(boards_config)
 
 app = Flask(__name__, instance_path=os.path.join(os.getcwd(), 'arduino'))
+# Flask environment variable needed for session management
+flask_config = {
+    # Use as secret key the user email + the end time of the session 
+    'SECRET_KEY': user_email + end_time,
+}
 app.config.from_mapping(flask_config)
+
+# Start the thread to clean the lab
+clean_lab = cleanLab(boards, user_end_time, app.instance_path)
+clean_lab.start()
 
 # Create the subfolders for the compilations
 try:
@@ -87,14 +85,16 @@ def index():
         navtabs.append(create_navtab(board))
         editors.append(create_editor(board))
     return render_template('index.html', boards=boards, navtabs=navtabs,
-                                editors=editors, cam_url=cam_url, end_time=end_time)
+                                editors=editors, cam_url=cam_url, 
+                                end_time=user_end_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
 
 @app.route('/get_example', methods=['GET'])
 @login_required
 def get_example(): 
     example = request.args.get('example')      
     examples_path = os.path.join(app.instance_path, 'examples')
-
+    example_file = None
+    
     # Find example file in the corresponding folder
     for folder in os.listdir(examples_path):
         if example in os.listdir(os.path.join(examples_path, folder)):
@@ -109,16 +109,18 @@ def compile():
     board = request.form['board']
     code = request.form['text']
 
+    fqbn = boards[board]['fqbn']
+
     compilation_path = os.path.join(app.instance_path, 'compilations', board)
     sketch_path = os.path.join(compilation_path, 'temp_sketch')
 
     with open(os.path.join(sketch_path, 'temp_sketch.ino'), 'w') as f:
         f.write(code)
 
-    command = ['arduino-cli', 'compile', '--fqbn', boards[board]['fqbn'],
-    '--build-cache-path', os.path.join(compilation_path, 'cache'), 
-    '--build-path', os.path.join(compilation_path, 'build'), 
-    sketch_path]
+    command = ['arduino-cli', 'compile', '--fqbn', fqbn,
+        '--build-cache-path', os.path.join(compilation_path, 'cache'), 
+        '--build-path', os.path.join(compilation_path, 'build'), 
+        sketch_path]
 
     result = subprocess.run(command, capture_output=True, text=True) 
 
@@ -128,38 +130,23 @@ def compile():
 @app.route('/execute', methods=['POST'])
 @login_required
 def execute():
+    global boards
+
     board = request.form['board']
     target = request.form['target']
-
-    upload_sketch(board, target)
-
-    resp = jsonify(board=board)
-    return resp
-
-def upload_sketch(board, target):
-    global boards
-    boards = get_usb_driver(boards) # Get the drivers (ttyACM*) of the boards
     
     usb_driver = boards[board]['usb_driver']
     fqbn = boards[board]['fqbn']
 
-    if (target == 'user'): 
-        input_file = os.path.join(app.instance_path, 'compilations', board, 'build','temp_sketch.ino.hex')
-    else: # target == 'stop'
-        input_file = os.path.join(app.instance_path, 'compilations', 'precompiled','stop.ino.hex')
+    result = upload_sketch(board, fqbn, usb_driver, target)
 
-    command = ['arduino-cli', 'upload', '--port', f'/dev/{usb_driver}',
-                 '--fqbn', fqbn, '--input-file', input_file]
-    
-    result = subprocess.run(command, capture_output=True, text=True) 
-    print(result) # Debug info
-
+    resp = jsonify(board=board, error=result.stderr)
+    return resp
 
 @app.route('/monitor', methods=['GET'])
 @login_required
 def monitor():
     global boards
-    boards = get_usb_driver(boards) # Get the drivers (ttyACM*) of the boards
     
     board = request.args.get('board')
     baudrate = request.args.get('baudrate', default=9600, type=int)
@@ -202,13 +189,18 @@ def suggest():
 @app.route('/reset_lab', methods=['GET'])
 @login_required
 def reset():
+    global boards
+    
     # Uhubctl is used to power on/off the USB ports of the Raspberry Pi
     command = ['uhubctl', '-a', 'cycle', '-l', '1-1', '-d', '2']
     result = subprocess.run(command, capture_output=True, text=True)
+    
     # Load the stop code in all the boards
     time.sleep(1)
     for board in boards:
-        upload_sketch(board, 'stop')
+        usb_driver = boards[board]['usb_driver']
+        fqbn = boards[board]['fqbn']
+        upload_sketch(board, fqbn, usb_driver, 'stop', app.instance_path)
     # Return the output of the command for debugging purposes
     resp = jsonify(result=result.stdout)
     return resp
