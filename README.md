@@ -1,4 +1,4 @@
-In4Labs - Robotics Systems remote lab
+In4Labs - Robotics Systems remote lab [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 =====
 # Description
 Implementation of the Robotics Systems lab inside a Docker image that will be run by the tools [In4Labs base LTI tool](https://github.com/cRejon/in4labs) (if using a LMS such as Moodle) or [In4Labs base auth tool](https://github.com/cRejon/in4labs_auth) (if basic authentication is desired).  
@@ -49,3 +49,12 @@ sudo apt install -y python3-docker
 Execute the **_test.py_** file inside _test folder_ and go in your browser to the given url.  
 The Docker container is created via the Dockerfile <ins>only</ins> the first time this script is run. This will take some time, so please be patient.  
 On the login page, enter ```admin@email.com``` as user.
+# License
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
+
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
+[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
