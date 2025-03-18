@@ -17,10 +17,8 @@ class cleanLab(threading.Thread):
         self.instance_path = instance_path # It's not possible to access current_app inside a thread
 
     def clean(self):
-        for board in self.boards.keys():
-            usb_driver = self.boards[board]['usb_driver']
-            fqbn = self.boards[board]['fqbn']
-            upload_sketch(board, fqbn, usb_driver, 'stop', self.instance_path)
+        for board_conf in self.boards.items():
+            upload_sketch(board_conf, 'stop', self.instance_path)
  
     def run(self):
         self.clean()
@@ -31,7 +29,7 @@ class cleanLab(threading.Thread):
 
 # Function to get the serial number and USB driver of the boards 
 # depending on the USB port they are connected to
-def update_boards_config(boards):
+def update_boards_config(boards_config):
     result = subprocess.run(['dmesg'], capture_output=True, text=True)
     dmesg_output = result.stdout
 
@@ -39,31 +37,37 @@ def update_boards_config(boards):
     pattern_serial = r'1-1.(\d): SerialNumber:\s(.*?)\n'
     matches_serial = re.findall(pattern_serial, dmesg_output)
     for match in matches_serial:
-        for board in boards.values():
-            if board['usb_port'] == match[0]:
-                board['serial_number'] = match[1]
+        for config in boards_config.values():
+            if config['usb_port'] == match[0]:
+                config['serial_number'] = match[1]
                 break
     
     # Raise an exception if a board is not connected
-    for board in boards.values():
-        if board['serial_number'] == '':
-            raise Exception(f'Board with USB port {board["usb_port"]} is not connected')
+    for config in boards_config.values():
+        if config.get('serial_number') is None:
+            raise Exception(f'Board with USB port {config["usb_port"]} is not connected')
         
     # Get USB drivers
     pattern_usb = r'1-1.(\d).*?(tty\w\w\w\d)'
     matches_usb = re.findall(pattern_usb, dmesg_output)
     for match in matches_usb:
-        for board in boards.values():
-            if board['usb_port'] == match[0]:
-                board['usb_driver'] = match[1]
+        for config in boards_config.values():
+            if config['usb_port'] == match[0]:
+                config['usb_driver'] = match[1]
                 break
 
-    return boards
+    return boards_config
 
-def upload_sketch(board, fqbn, usb_driver, target, instance_path=None):
+def upload_sketch(board_conf, target, instance_path=None):
     # Use current_app.instance_path if instance_path is not provided
     path = instance_path or current_app.instance_path
     
+    board = board_conf[0]
+    config = board_conf[1]
+
+    fqbn = config['fqbn']
+    usb_driver = config['usb_driver']
+
     if (target == 'user'): 
         input_file = os.path.join(path, 'compilations', board, 'build','temp_sketch.ino.hex')
     else: # target == 'stop'
@@ -76,12 +80,14 @@ def upload_sketch(board, fqbn, usb_driver, target, instance_path=None):
     return(result)        
 
 def fill_examples(board):
-    key = board[0]
-
-    example_path = os.path.join(current_app.instance_path, 'examples', key)
+    board_path = os.path.join(current_app.instance_path, 'examples', board)
+    commons_path = os.path.join(current_app.instance_path, 'examples', 'Commons')
 
     examples = []
-    examples += [file for file in os.listdir(example_path) if file.endswith('.ino')]
+    for path in [board_path, commons_path]:
+        if os.path.isdir(path):
+            examples += [file for file in os.listdir(path) if file.endswith('.ino')]
+
     # Sort them alphabetically
     examples.sort()
 
@@ -97,42 +103,45 @@ def fill_examples(board):
     
     return examples_html
 
-def create_navtab(board):
-    key = board[0]
-    name = board[1]['name'].replace(' ', '-')
+def create_navtab(board_conf):
+    board = board_conf[0]
+    config = board_conf[1]
+
+    name = config['name'].replace(' ', '-')
+
     navtab_html = f'''
-        <button class="nav-link {name} col-sm-4" id="nav-{key}-tab" data-bs-toggle="tab" data-bs-target="#nav-{key}" type="button" role="tab" aria-controls="nav-{key}" aria-selected="true">{name}</button>
+        <button class="nav-link {name.lower()} col-sm-4" id="nav-{board}-tab" data-bs-toggle="tab" data-bs-target="#nav-{board}" type="button" role="tab" aria-controls="nav-{board}" aria-selected="true">{name}</button>
     '''
 
     return navtab_html
 
-def create_editor(board):
-    key = board[0]
+def create_editor(board_conf):
+    board = board_conf[0]
 
     examples = fill_examples(board)
 
     editor_html = f'''
-                <div class="tab-pane fade active show" id="nav-{key}" role="tabpanel" aria-labelledby="nav-{key}-tab">
+                <div class="tab-pane fade active show" id="nav-{board}" role="tabpanel" aria-labelledby="nav-{board}-tab">
                     <div class="editor-nav">
                         <div class="row">
                             <div class="editor-examples col-sm-4">
                                 <div class="btn-group editor-examples-dropdown">
-                                    <select class="editor-select" id="editor-select-{key}" onchange="onLoadExample('{key}',this.value)">
+                                    <select class="editor-select" id="editor-select-{board}" onchange="onLoadExample('{board}',this.value)">
                                         {examples}
                                     </select>
                                 </div>
                             </div>
                             <div class="editor-cta col-sm-8">
                                 <div class="editor-cta-load">
-                                    <button class="upload" onclick="document.getElementById('file-input-{key}').click()" data-toggle="tooltip" data-placement="top" title="Load File"><span class="fa fa-upload"/></button>
-                                    <input id="file-input-{key}" type="file" accept=".ino" style="display: none;" />
+                                    <button class="upload" onclick="document.getElementById('file-input-{board}').click()" data-toggle="tooltip" data-placement="top" title="Load File"><span class="fa fa-upload"/></button>
+                                    <input id="file-input-{board}" type="file" accept=".ino" style="display: none;" />
                                     <script>
-                                        document.getElementById('file-input-{key}').addEventListener('change', onLoadFile, false);
+                                        document.getElementById('file-input-{board}').addEventListener('change', onLoadFile, false);
                                     </script>
-                                    <button class="download" onclick="onSaveFile('{key}')" data-toggle="tooltip" data-placement="top" title="Save File"><span class="fa fa-download"/></button>
+                                    <button class="download" onclick="onSaveFile('{board}')" data-toggle="tooltip" data-placement="top" title="Save File"><span class="fa fa-download"/></button>
                                     <button class="suggest"
-                                            id="button-suggest-{key}"
-                                            onclick="onSuggest('{key}')"
+                                            id="button-suggest-{board}"
+                                            onclick="onSuggest('{board}')"
                                             data-toggle="tooltip"
                                             data-placement="top"
                                             title="Suggest">
@@ -141,15 +150,15 @@ def create_editor(board):
                                 </div>
                                 <div class="editor-cta-compile">
                                     <button class="compile"
-                                            onclick="onCompileCode('{key}')"
+                                            onclick="onCompileCode('{board}')"
                                             data-toggle="tooltip"
                                             data-placement="top"
                                             title="Compile code">
                                         <span class="fa fa-check"/>
                                     </button>
                                     <button class="execute"
-                                            id="button-execute-{key}"
-                                            onclick="onExecuteCode('{key}')"
+                                            id="button-execute-{board}"
+                                            onclick="onExecuteCode('{board}')"
                                             data-toggle="tooltip"
                                             data-placement="top"
                                             title="Run"
@@ -157,8 +166,8 @@ def create_editor(board):
                                         <span class="fa fa-play-circle"/>
                                     </button>
                                     <button class="monitor"
-                                            id="button-monitor-{key}"
-                                            onclick="setupMonitor('{key}')"
+                                            id="button-monitor-{board}"
+                                            onclick="setupMonitor('{board}')"
                                             data-toggle="tooltip"
                                             data-placement="top"
                                             title="Monitor"
@@ -166,8 +175,8 @@ def create_editor(board):
                                         <span class="fa fa-terminal"/>
                                     </button>
                                     <button class="stop"
-                                            id="button-stop-{key}"
-                                            onclick="onStopExecution('{key}')"
+                                            id="button-stop-{board}"
+                                            onclick="onStopExecution('{board}')"
                                             data-toggle="tooltip"
                                             data-placement="top"
                                             title="Stop"
@@ -178,24 +187,24 @@ def create_editor(board):
                             </div>
                         </div>
                     </div>
-                    <form id="editor-{key}">
-                        <textarea id="text-{key}" name="text-{key}"></textarea>
+                    <form id="editor-{board}">
+                        <textarea id="text-{board}" name="text-{board}"></textarea>
                         <script>
-                            let editor_{key} = CodeMirror.fromTextArea(document.getElementById('text-{key}'), {{
+                            let editor_{board} = CodeMirror.fromTextArea(document.getElementById('text-{board}'), {{
                                 mode: 'text/x-c++src',
                                 theme: 'neat',
                                 lineNumbers: true,
                                 autoCloseBrackets:true,
                             }});
 
-                            function {key}GetEditor() {{
-                                return editor_{key};
+                            function {board}GetEditor() {{
+                                return editor_{board};
                             }}
 
-                            onLoadExample('{key}','New_Sketch.ino');
+                            onLoadExample('{board}','New_Sketch.ino');
                             
                             // Listener to trigger a function when the code changes
-                            editor_{key}.on("change", function() {{ onChangeCode('{key}') }});
+                            editor_{board}.on("change", function() {{ onChangeCode('{board}') }});
                         </script>
                     </form>
                 </div>

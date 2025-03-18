@@ -20,7 +20,7 @@ function onLoadExample(board, example) {
     $.ajax({
         type: "GET",
         url: "get_example",
-        data: {example:example},
+        data: {board:board, example:example},
         dataType: "text",
         success: function(response) {
             let editor = getEditor(board);

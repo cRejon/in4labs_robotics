@@ -11,6 +11,7 @@ from flask_login import LoginManager, UserMixin, login_required, current_user, l
 from .config import boards_config
 from .utils import cleanLab, upload_sketch, update_boards_config, create_editor, create_navtab
 
+
 # Docker environment variables
 cam_url = os.environ.get('CAM_URL') 
 user_email = os.environ.get('USER_EMAIL') 
@@ -81,9 +82,9 @@ def login():
 def index():
     navtabs = []
     editors = []
-    for board in boards.items():
-        navtabs.append(create_navtab(board))
-        editors.append(create_editor(board))
+    for board_conf in boards.items():
+        navtabs.append(create_navtab(board_conf))
+        editors.append(create_editor(board_conf))
     return render_template('index.html', boards=boards, navtabs=navtabs,
                                 editors=editors, cam_url=cam_url, 
                                 end_time=user_end_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
@@ -91,14 +92,17 @@ def index():
 @app.route('/get_example', methods=['GET'])
 @login_required
 def get_example(): 
+    board = request.args.get('board')
     example = request.args.get('example')      
-    examples_path = os.path.join(app.instance_path, 'examples')
-    example_file = None
     
-    # Find example file in the corresponding folder
-    for folder in os.listdir(examples_path):
-        if example in os.listdir(os.path.join(examples_path, folder)):
-            example_file = os.path.join(examples_path, folder, example)
+    examples_path = os.path.join(app.instance_path, 'examples')
+    board_path = os.path.join(examples_path, board)
+    commons_path = os.path.join(examples_path, 'Commons')
+    
+    example_file = None
+    for path in [board_path, commons_path]:
+        if os.path.isdir(path) and example in os.listdir(path):
+            example_file = os.path.join(path, example)
             break
 
     return send_file(example_file, mimetype='text')
@@ -106,11 +110,13 @@ def get_example():
 @app.route('/compile', methods=['POST'])
 @login_required
 def compile():
+    global boards
+
     board = request.form['board']
     code = request.form['text']
 
     fqbn = boards[board]['fqbn']
-
+        
     compilation_path = os.path.join(app.instance_path, 'compilations', board)
     sketch_path = os.path.join(compilation_path, 'temp_sketch')
 
@@ -135,11 +141,11 @@ def execute():
     board = request.form['board']
     target = request.form['target']
     
-    usb_driver = boards[board]['usb_driver']
-    fqbn = boards[board]['fqbn']
-
-    result = upload_sketch(board, fqbn, usb_driver, target)
-
+    for board_conf in boards.items():
+        if board_conf[0] == board:
+            result = upload_sketch(board_conf, target)
+            break 
+    
     resp = jsonify(board=board, error=result.stderr)
     return resp
 
@@ -197,11 +203,9 @@ def reset():
     
     # Load the stop code in all the boards
     time.sleep(1)
-    for board in boards:
-        usb_driver = boards[board]['usb_driver']
-        fqbn = boards[board]['fqbn']
-        upload_sketch(board, fqbn, usb_driver, 'stop', app.instance_path)
+    for board_conf in boards.items():
+        upload_sketch(board_conf, 'stop')
+    
     # Return the output of the command for debugging purposes
     resp = jsonify(result=result.stdout)
     return resp
-
