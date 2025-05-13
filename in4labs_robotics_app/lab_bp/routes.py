@@ -8,11 +8,11 @@ import requests
 from flask import current_app, render_template, jsonify, send_file, request, url_for, redirect, flash
 from flask_login import current_user, login_user, login_required
 
-from in4labs_perception_app import boards, user, user_end_time
-from in4labs_perception_app.lab_bp import bp
 from .utils import create_editor, create_navtab
-from ..utils import upload_sketch
-from ..config import Config
+from in4labs_robotics_app import boards, user, user_end_time
+from in4labs_robotics_app.lab_bp import bp
+from in4labs_robotics_app.config import Config
+from in4labs_robotics_app.utils import upload_sketch
 
 
 # Default route for login
