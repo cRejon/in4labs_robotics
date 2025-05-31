@@ -23,13 +23,17 @@
                     </div>
                 </div>
                 <div class="camera" id="camera">
-                    <iframe id="cam"
-                            src="{{ cam_url }}"
-                            allowfullscreen="allowfullscreen"
-                            mozallowfullscreen="mozallowfullscreen"
-                            webkitallowfullscreen="webkitallowfullscreen"
-                            width="560">
-                    </iframe>
+                    <div class="card-body">
+                        <h3 style="margin-top: 10px;"><u>Webcam</u></h3>
+                        <video
+                        id="cam"
+                        autoplay
+                        muted
+                        playsinline
+                        style="margin-top: 20px;"
+                        width="570">
+                        </video>
+                    </div>
                 </div>
             </div>
             <br>
@@ -53,6 +57,17 @@
             let end_time = new Date("{{ end_time }}").getTime();
             countdownTimer(end_time); 
         </script>
+        <script>
+            const cam = document.getElementById('cam');
+            if (cam && Hls.isSupported()) {
+                // 1) No-cache
+                const src = "{{ cam_url }}?t=" + Date.now();
+                // 2) startPosition = -1 start on live-edge
+                const hls = new Hls({ startPosition: -1 });
+                hls.loadSource(src);
+                hls.attachMedia(cam);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => cam.play());
+            }
+        </script>
     </section>
 {% endblock %} 
-

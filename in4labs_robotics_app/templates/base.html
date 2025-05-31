@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 
 <!-- HEAD -->
@@ -20,7 +21,6 @@
     <script src="{{ url_for('static', filename='js/messages_en.js') }}"></script>
     <script src="{{ url_for('static', filename='js/button_actions.js') }}"></script>
     <script src="{{ url_for('static', filename='js/web_events.js') }}"></script>
-    {% block scripts %}{% endblock %}
 
     <!-- JavaScript Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
@@ -31,6 +31,8 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.2/mode/clike/clike.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.2/theme/neat.min.css">
 
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    {% block scripts %}{% endblock %}
 </head>
 
 <!-- BODY -->
@@ -41,7 +43,7 @@
         </div>
 
         <div class="page-title">
-            <span class="is-hidden-xs">In4Labs - <strong>Robotic Laboratory</strong></span>
+            <span class="is-hidden-xs">In4Labs - <strong>Robotics Laboratory</strong></span>
         </div>
         <div class="log-header">
             <div align="right">
