@@ -29,6 +29,7 @@ server_name = Config.labs_config['server_name']
 mounting = Config.labs_config['mountings'][0]
 lab_duration = mounting['duration'] # in minutes
 cam_url = mounting.get('cam_url', '')
+lab_port = mounting['host_port']
 lab = Config.labs_config['labs'][0]
 lab_name = lab['lab_name']
 lab_port = lab['host_port']
