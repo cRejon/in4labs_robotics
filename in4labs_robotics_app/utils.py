@@ -72,15 +72,33 @@ def upload_sketch(board_conf, target, instance_path=None):
     config = board_conf[1]
 
     fqbn = config['fqbn']
-    usb_driver = config['usb_driver']
+    board_type = fqbn.split(':')[1] # e.g. 'arduino:esp32:nano_nora'
+    command = None
 
-    if (target == 'user'): 
-        input_file = os.path.join(path, 'compilations', board, 'build','temp_sketch.ino.hex')
-    else: # target == 'stop'
-        input_file = os.path.join(path, 'compilations', 'precompiled','stop.ino.hex')
+    if (board_type == 'esp32'):
+        serial_number = config['serial_number']
 
-    command = ['arduino-cli', 'upload', '--port', f'/dev/{usb_driver}',
-                 '--fqbn', fqbn, '--input-file', input_file]
+        if (target == 'user'): 
+            input_file = os.path.join(path, 'compilations', board, 'build','temp_sketch.ino.bin')
+        else: # target == 'stop'
+            input_file = os.path.join(path, 'compilations', 'precompiled','stop.ino.bin')
+
+        dfu_util = os.path.join('/', 'root', '.arduino15', 'packages', 'arduino',
+                                        'tools', 'dfu-util', '0.11.0-arduino5', 'dfu-util')
+        
+        command = [dfu_util, '--serial', serial_number, '-D', input_file, '-Q']
+    elif (board_type == 'avr'):
+        usb_driver = config['usb_driver']
+
+        if (target == 'user'): 
+            input_file = os.path.join(path, 'compilations', board, 'build','temp_sketch.ino.hex')
+        else: # target == 'stop'
+            input_file = os.path.join(path, 'compilations', 'precompiled','stop.ino.hex')
+
+        command = ['arduino-cli', 'upload', '--port', f'/dev/{usb_driver}',
+                    '--fqbn', fqbn, '--input-file', input_file]    
+    else:
+        raise Exception(f'Board of type "{board_type}" is not supported')
     
     result = subprocess.run(command, capture_output=True, text=True) 
-    return(result)  
+    return(result) 
